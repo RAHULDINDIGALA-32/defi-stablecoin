@@ -15,7 +15,7 @@ contract Handler is Test {
     ERC20Mock wbtc;
 
     uint256 public timesMintIsCalled;
-    address[] public userWithCollateralDeposited;
+    address[] public usersWithCollateralDeposited;
     MockV3Aggregator public ethUsdPriceFeed;
     MockV3Aggregator public btcUsdPriceFeed;
 
@@ -32,7 +32,11 @@ contract Handler is Test {
         ethUsdPriceFeed = MockV3Aggregator(dscEngine.getCollateralTokenPriceFeed(address(weth)));
     }
 
-    function mintDsc(uint256 amount) public {
+    function mintDsc(uint256 amount, uint256 addressSeed) public {
+        if (usersWithCollateralDeposited.length == 0) {
+            return;
+        }
+        address sender = usersWithCollateralDeposited[addressSeed % usersWithCollateralDeposited.length];
         (uint256 totalDscMinted, uint256 collateralvalueInUsd) = dscEngine.getAccountInformation(msg.sender);
 
         uint256 maxDscToMint = (collateralvalueInUsd / 2) - totalDscMinted;
@@ -43,9 +47,10 @@ contract Handler is Test {
         if (amount == 0) {
             return;
         }
-        vm.startPrank(msg.sender);
+        vm.startPrank(sender);
         dscEngine.mintDsc(amount);
         vm.stopPrank();
+        timesMintIsCalled++;
     }
 
     function depositCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
@@ -57,6 +62,8 @@ contract Handler is Test {
         collateral.approve(address(dscEngine), amountCollateral);
         dscEngine.depositCollateral(address(collateral), amountCollateral);
         vm.stopPrank();
+        // muktiple push form same address possible
+        usersWithCollateralDeposited.push(msg.sender);
     }
 
     function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
