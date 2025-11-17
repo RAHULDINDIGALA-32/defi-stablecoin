@@ -217,8 +217,20 @@ contract DSCEngine is ReentrancyGuard {
         _revertIfHealthFactorIsBroken(user);
     }
 
-    function getHealthFactor() external view {
-        //
+    function getAccountInformation(address user)
+        external
+        view
+        returns (uint256 totalDscMinted, uint256 collateralValueInUsd)
+    {
+        (totalDscMinted, collateralValueInUsd) = _getAccountInformation(user);
+    }
+
+    function calculateHealthFactor(uint256 totalDscMinted, uint256 collateralValueInUsd)
+        external
+        pure
+        returns (uint256)
+    {
+        return _calculateHealthFactor(totalDscMinted, collateralValueInUsd);
     }
 
     //////////////////////////////
@@ -263,6 +275,16 @@ contract DSCEngine is ReentrancyGuard {
         }
     }
 
+    function _calculateHealthFactor(uint256 totalDscMinted, uint256 collateralValueInUsd)
+        internal
+        pure
+        returns (uint256)
+    {
+        if (totalDscMinted == 0) return type(uint256).max;
+        uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;
+    }
+
     //////////////////////////////
     // Private Functions      //
     //////////////////////////////
@@ -276,13 +298,8 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     function _healthFactor(address user) private view returns (uint256) {
-        // total DSC minted
-        // total collateral value
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
-        uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
-        // $1000 ETH | 100 DSC
-        // 1000 * 50 = 50000 / 100 = (500 /100) > 1
-        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;
+        return _calculateHealthFactor(totalDscMinted, collateralValueInUsd);
     }
 
     function _redeemCollateral(address from, address to, address tokenCollateralAddress, uint256 amountCollateral)
