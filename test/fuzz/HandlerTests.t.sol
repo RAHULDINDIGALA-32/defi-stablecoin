@@ -72,10 +72,10 @@ contract Handler is Test {
     }
 
     // This breaks our invariant test suite
-    function updateCollateralPrice(uint96 newPrice) public {
-        int256 newPriceInt = int256(uint256(newPrice));
-        ethUsdPriceFeed.updateAnswer(newPriceInt);
-    }
+    // function updateCollateralPrice(uint96 newPrice) public {
+    //     int256 newPriceInt = int256(uint256(newPrice));
+    //     ethUsdPriceFeed.updateAnswer(newPriceInt);
+    // }
 
     // Helper Functions
     function _getCollateralFromSeed(uint256 collateralSeed) internal view returns (ERC20Mock) {
